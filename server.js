@@ -70,6 +70,21 @@ app.delete('/api/medicines/:id', async (req, res) => {
     try { await Medicine.findByIdAndDelete(req.params.id); res.status(200).json({ message: "Deleted" }); } catch (e) { res.status(400).json({ error: "Error" }); }
 });
 
+// YEH WALA HISSA MISSING THA - Dawai Edit/Update karna (Picture ke sath)
+app.put('/api/medicines/:id', upload.single('image'), async (req, res) => {
+    try {
+        let updateData = { ...req.body };
+        // Agar nayi picture upload ki gayi hai toh Cloudinary ka link add karein
+        if (req.file) {
+            updateData.imageUrl = req.file.path; 
+        }
+        const updatedMedicine = await Medicine.findByIdAndUpdate(req.params.id, updateData, { new: true });
+        res.status(200).json(updatedMedicine);
+    } catch (e) { 
+        res.status(400).json({ error: "Error updating medicine" }); 
+    }
+});
+
 app.post('/api/orders', async (req, res) => {
     try {
         const order = new Order(req.body); await order.save();
