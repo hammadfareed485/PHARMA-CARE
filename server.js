@@ -5,20 +5,29 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Cloudinary packages
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Upload folder create karna agar nahi hai
-if (!fs.existsSync('./uploads')) {
-    fs.mkdirSync('./uploads');
-}
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+// Cloudinary setup (Aapke original credentials)
+cloudinary.config({
+  cloud_name: 'bt4mtirl',
+  api_key: '645129384526287',
+  api_secret: 'OL_tdQStSyKk_PYp8bwksJTn9mE'
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'pharmacy_medicines',
+    allowedFormats: ['jpg', 'png', 'jpeg'],
+  },
+});
+
 const upload = multer({ storage: storage });
 
 // YAHAN APNA ASAL MONGODB LINK PASTE KAREIN
@@ -41,9 +50,12 @@ app.post('/api/admin/login', (req, res) => {
 app.post('/api/medicines', upload.single('image'), async (req, res) => {
     try {
         let imageUrl = req.body.imageUrl || "";
+        
+        // Agar picture direct upload hui hai, toh Cloudinary ka link set ho jayega
         if (req.file) {
-            imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+            imageUrl = req.file.path; 
         }
+        
         const dawai = new Medicine({ ...req.body, imageUrl }); 
         await dawai.save(); 
         res.status(201).json(dawai); 
